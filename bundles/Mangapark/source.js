@@ -15544,6 +15544,17 @@ var _Sources = (() => {
         pages
       });
     }
+    async getCloudflareBypassRequestAsync() {
+      return App.createRequest({
+        url: DOMAIN2,
+        method: "GET",
+        headers: {
+          "referer": DOMAIN2,
+          "origin": DOMAIN2,
+          "user-agent": await this.requestManager.getDefaultUserAgent()
+        }
+      });
+    }
     getMangaShareUrl(mangaId) {
       return `${DOMAIN2}/title/${mangaId}`;
     }
