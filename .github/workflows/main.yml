@@ -1,9 +1,14 @@
 name: Bundle and Publish Sources
-on: 
+on:
   push:
     branches:
       - '**'
       - '!main'
+
+# Allow the workflow to push to the repo (required for gh-pages deploy)
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Bundle and Publish Sources
@@ -15,29 +20,56 @@ jobs:
 
     steps:
       - name: Checkout Branch
-        uses: actions/checkout@v4.1.4
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-      
-      - name: Extract branch name
-        run: echo "branch=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_OUTPUT
-        id: extract_branch
 
-      - name: Checkout existing bundles
-        uses: actions/checkout@v4.1.4
+      - name: Extract branch name
+        id: extract_branch
+        shell: bash
+        run: |
+          # Extract branch from GITHUB_REF and expose as step output
+          BRANCH=${GITHUB_REF#refs/heads/}
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH"
+
+      - name: Checkout existing bundles (gh-pages)
+        uses: actions/checkout@v4
         continue-on-error: true
         with:
           ref: gh-pages
           path: bundles
+          fetch-depth: 0
 
-      - run: npm ci
-      - run: npm run bundle -- --folder=${{ steps.extract_branch.outputs.branch }}
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Bundle sources
+        shell: bash
+        run: |
+          BRANCH="${{ steps.extract_branch.outputs.branch }}"
+          if [ -z "$BRANCH" ]; then
+            echo "No branch name detected; aborting"
+            exit 1
+          fi
+
+          # Ensure the target bundles folder exists before the bundler modifies it.
+          TARGET_DIR="bundles/$BRANCH"
+          mkdir -p "$TARGET_DIR"
+
+          # Run the bundling script. If your npm script expects a path instead of a branch name,
+          # change the argument appropriately (e.g. --folder="$TARGET_DIR").
+          npm run bundle -- --folder="$BRANCH"
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4.6.0
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
           branch: gh-pages
           folder: bundles
+          clean: true
