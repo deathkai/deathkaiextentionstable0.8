@@ -1,0 +1,1 @@
+{"buildTime":"2025-10-21T04:51:59.506Z","sources":[{"id":"Mangapark","name":"Mangapark","author":"deathkai","desc":"Extension that pulls manga from https://mangapark.io","contentRating":"EVERYONE","version":"0.0.1","icon":"icon.png","tags":[],"websiteBaseURL":"https://mangapark.io","intents":21}],"builtWith":{"toolchain":"0.8.7","types":"0.8.7"}}
